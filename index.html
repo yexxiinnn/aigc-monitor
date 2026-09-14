@@ -370,7 +370,38 @@ async function acceptOffer() {
     const token = await compressToken(JSON.stringify(pc.localDescription));
     document.getElementById('answerOutput').value = token;
     document.getElementById('answer-out-len').textContent = token.length + ' chars';
+    setLobbyStatus('Waiting for friend to connect...');
+    startJoinerMonitor();
   } catch(e) { setLobbyStatus('Error: ' + e.message); showLobbyStep('join-1'); }
+}
+let joinerMonitor = null;
+function startJoinerMonitor() {
+  if (joinerMonitor) clearInterval(joinerMonitor);
+  let ticks = 0;
+  joinerMonitor = setInterval(() => {
+    ticks++;
+    if (!pc) { clearInterval(joinerMonitor); joinerMonitor = null; return; }
+    if (dc && dc.readyState === 'open') { clearInterval(joinerMonitor); joinerMonitor = null; return; }
+    const st = pc.connectionState || pc.iceConnectionState;
+    if (st === 'connected' || st === 'completed') {
+      if (ticks > 6) {
+        clearInterval(joinerMonitor); joinerMonitor = null;
+        setLobbyStatus('Connected! If game did not start, tap below.');
+        const statusEl = document.getElementById('lobby-status');
+        if (!statusEl.querySelector('.btn')) {
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-primary';
+          btn.textContent = 'Enter Game';
+          btn.style.marginTop = '8px';
+          btn.onclick = () => { document.getElementById('lobby-overlay').classList.remove('show'); startGame(); };
+          statusEl.appendChild(btn);
+        }
+      }
+    } else if (st === 'failed' || st === 'disconnected') {
+      clearInterval(joinerMonitor); joinerMonitor = null;
+      setLobbyStatus('Connection failed. Try New Session and start over.');
+    }
+  }, 1000);
 }
 
 async function acceptAnswer() {
@@ -384,7 +415,35 @@ async function acceptAnswer() {
   try {
     const ans = JSON.parse(await decompressToken(raw));
     await pc.setRemoteDescription(ans); setLobbyStatus('Connecting...');
+    startConnectionMonitor();
   } catch(e) { setLobbyStatus('Error: ' + e.message + '\nAsk your friend to re-copy the code.'); }
+}
+let connMonitor = null;
+function startConnectionMonitor() {
+  if (connMonitor) clearInterval(connMonitor);
+  let ticks = 0;
+  connMonitor = setInterval(() => {
+    ticks++;
+    if (!pc) { clearInterval(connMonitor); connMonitor = null; return; }
+    const st = pc.connectionState || pc.iceConnectionState;
+    if (st === 'connected' || st === 'completed') {
+      if (dc && dc.readyState === 'open') { clearInterval(connMonitor); connMonitor = null; return; }
+      if (ticks > 10) {
+        clearInterval(connMonitor); connMonitor = null;
+        setLobbyStatus('Connected but sync pending. Ask your friend to also click Connect.');
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary';
+        btn.textContent = 'Enter Game';
+        btn.style.marginTop = '8px';
+        btn.onclick = () => { document.getElementById('lobby-overlay').classList.remove('show'); startGame(); };
+        const statusEl = document.getElementById('lobby-status');
+        if (!statusEl.querySelector('.btn')) statusEl.appendChild(btn);
+      }
+    } else if (st === 'failed' || st === 'disconnected') {
+      clearInterval(connMonitor); connMonitor = null;
+      setLobbyStatus('Connection failed. Try New Session and start over.');
+    }
+  }, 500);
 }
 
 function setupDC(ch) {
@@ -401,9 +460,13 @@ function sendMsg(o) { if (dc && dc.readyState === 'open') dc.send(JSON.stringify
 
 // ===== Lobby UI =====
 function showLobby() {
+  if (connMonitor) { clearInterval(connMonitor); connMonitor = null; }
+  if (joinerMonitor) { clearInterval(joinerMonitor); joinerMonitor = null; }
   if (dc) { try { dc.close(); } catch(e) {} } if (pc) { try { pc.close(); } catch(e) {} }
   dc = null; pc = null;
   clearUndoTimer();
+  const statusEl = document.getElementById('lobby-status');
+  statusEl.querySelectorAll('.btn').forEach(b => b.remove());
   document.getElementById('result-overlay').classList.remove('show');
   document.getElementById('lobby-overlay').classList.add('show');
   switchLobbyTab('create');
