@@ -575,7 +575,7 @@ function setupDC(ch) {
     const d = JSON.parse(e.data);
     if (d.type === 'move' && !grid[d.r][d.c] && !gameOver) placePiece(d.r, d.c);
     else if (d.type === 'undo') { undoRemote(); }
-    else if (d.type === 'restart') { initGame(); document.getElementById('result-overlay').classList.remove('show'); }
+    else if (d.type === 'restart') { gameCount = d.gn || gameCount; initGame(); document.getElementById('result-overlay').classList.remove('show'); }
     else if (d.type === 'reaction') { showFloatingEmoji(d.emoji); }
   };
 }
@@ -589,6 +589,7 @@ function showLobby() {
   if (dc) { try { dc.close(); } catch(e) {} } if (pc) { try { pc.close(); } catch(e) {} }
   dc = null; pc = null;
   clearUndoTimer();
+  gameCount = 0; scoreA = 0; scoreB = 0;
   const statusEl = document.getElementById('lobby-status');
   statusEl.querySelectorAll('.btn').forEach(b => b.remove());
   document.getElementById('result-overlay').classList.remove('show');
@@ -635,7 +636,7 @@ let CELL, PAD, R, W;
 const COL_HEADERS = 'ABCDEFGHIJKLMNO'.split('');
 const rowLabels = Array.from({ length: 15 }, (_, i) => 'V' + String(i + 1).padStart(2, '0'));
 let grid, history, currentPlayer, gameOver;
-let scoreA = 0, scoreB = 0;
+let scoreA = 0, scoreB = 0, gameCount = 0;
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 
@@ -654,11 +655,12 @@ window.addEventListener('resize', () => { calcSize(); if (grid) draw(); });
 
 function initGame() {
   grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
-  history = []; currentPlayer = 1; gameOver = false;
+  history = []; currentPlayer = (gameCount % 2 === 0) ? 1 : 2; gameOver = false;
   clearUndoTimer();
   updateUI(); draw();
+  const firstPlayer = currentPlayer === 1 ? 'A' : 'B';
   document.getElementById('log-list').innerHTML =
-    '<div class="log-item"><span class="log-time">' + timeNow() + '</span><span>Session started</span></div>';
+    '<div class="log-item"><span class="log-time">' + timeNow() + '</span><span>Game ' + (gameCount + 1) + ' · Rev.' + firstPlayer + ' goes first</span></div>';
 }
 function startGame() {
   const mode = myColor === 1 ? 'Reviewer A' : 'Reviewer B';
@@ -737,7 +739,7 @@ function checkWin(r, c, p) {
   }
   return false;
 }
-function restart() { document.getElementById('result-overlay').classList.remove('show'); clearUndoTimer(); sendMsg({ type: 'restart' }); initGame(); }
+function restart() { document.getElementById('result-overlay').classList.remove('show'); clearUndoTimer(); gameCount++; sendMsg({ type: 'restart', gn: gameCount }); initGame(); }
 
 // ===== Drawing =====
 function draw() {
