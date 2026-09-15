@@ -7,149 +7,170 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>AIGC Pipeline Monitor</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", "PingFang SC", sans-serif;
-    background: #0d1117; color: #c9d1d9; min-height: 100vh; overflow-x: hidden;
-  }
-  @media (min-width: 800px) {
-    body { padding: 20px 32px; }
-    .topbar { padding: 12px 0; border-bottom: 1px solid #21262d; margin-bottom: 20px; }
-    .main { display: flex; gap: 24px; }
-    .left-panel { flex: 1; min-width: 0; }
-    .right-panel { width: 280px; flex-shrink: 0; }
-    .mobile-only { display: none !important; }
-  }
-  @media (max-width: 799px) {
-    body { padding: 8px 12px; padding-bottom: 60px; }
-    .topbar { padding: 8px 0; border-bottom: 1px solid #21262d; margin-bottom: 10px; }
-    .topbar-sub { display: none; }
-    .main { display: flex; flex-direction: column; gap: 12px; }
-    .right-panel { width: 100%; }
-    .desktop-only { display: none !important; }
-    .matrix-container { padding: 10px; }
-    .filter-bar { display: none; }
-    .matrix-header { margin-bottom: 8px; }
-    .matrix-header h3 { font-size: 12px; }
-    .card { padding: 12px; margin-bottom: 10px; }
-    .section-title { margin-bottom: 8px; font-size: 12px; }
-    .statusbar { display: none; }
-  }
+/* === Base Reset === */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,"SF Pro Text","Helvetica Neue","PingFang SC",sans-serif;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
 
-  .topbar { display: flex; align-items: center; justify-content: space-between; }
-  .topbar-left { display: flex; align-items: center; gap: 10px; }
-  .topbar-logo { width: 26px; height: 26px; background: #4f6ef7; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; }
-  .topbar-title { font-size: 14px; font-weight: 600; color: #e6edf3; }
-  .topbar-sub { font-size: 12px; color: #484f58; margin-left: 6px; }
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-  .topbar-right span { font-size: 11px; color: #484f58; }
-  .topbar-avatar { width: 26px; height: 26px; background: #21262d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #484f58; }
-  .section-title { font-size: 13px; font-weight: 600; color: #8b949e; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-  .dot-indicator { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-  .dot-green { background: #3fb950; }
-  .dot-orange { background: #d29922; }
-  .dot-red { background: #f85149; }
-  .matrix-container { background: #161b22; border-radius: 8px; padding: 16px; border: 1px solid #21262d; }
-  .matrix-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .matrix-header h3 { font-size: 14px; font-weight: 600; color: #e6edf3; }
-  .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
-  .badge-ok { background: rgba(63,185,80,0.15); color: #3fb950; }
-  .badge-warn { background: rgba(210,153,34,0.15); color: #d29922; }
-  .badge-err { background: rgba(248,81,73,0.15); color: #f85149; }
-  .filter-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-  .filter-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: #0d1117; color: #484f58; border: 1px solid #21262d; }
-  .filter-tag.active { background: rgba(79,110,247,0.12); color: #79a7ff; border-color: rgba(79,110,247,0.3); }
-  .canvas-wrap { display: flex; justify-content: center; overflow: hidden; position: relative; }
-  canvas { display: block; cursor: default; touch-action: none; max-width: 100%; height: auto; }
-  .card { background: #161b22; border-radius: 8px; padding: 14px; border: 1px solid #21262d; margin-bottom: 12px; }
-  .card-title { font-size: 11px; font-weight: 600; color: #484f58; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
-  .stat-label { color: #8b949e; }
-  .stat-value { font-weight: 600; color: #e6edf3; font-variant-numeric: tabular-nums; }
-  .stat-value.green { color: #3fb950; }
-  .stat-value.red { color: #f85149; }
-  .stat-value.orange { color: #d29922; }
-  .progress-bar { height: 3px; background: #21262d; border-radius: 2px; margin-top: 6px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
-  .log-list { max-height: 140px; overflow-y: auto; }
-  .log-item { font-size: 11px; color: #8b949e; padding: 3px 0; border-bottom: 1px solid #21262d; display: flex; gap: 6px; }
-  .log-item:last-child { border: none; }
-  .log-time { color: #484f58; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-  .statusbar { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #484f58; padding: 8px 0; border-top: 1px solid #21262d; }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #3fb950; display: inline-block; margin-right: 4px; }
-  .btn-row { display: flex; gap: 8px; margin-top: 8px; }
-  .btn { padding: 10px 16px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.15s; flex: 1; text-align: center; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-  .btn-primary { background: #4f6ef7; color: #fff; }
-  .btn-secondary { background: #21262d; color: #8b949e; }
-  #undo-btn { position: relative; overflow: hidden; }
-  #undo-btn.show { display: flex !important; background: rgba(79,110,247,0.18); color: #79a7ff; border: 1px solid rgba(79,110,247,0.3); }
-  #undo-btn.expired { opacity: 0.4; pointer-events: none; }
+/* === Theme Variables === */
+body{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#21262d;--text:#c9d1d9;--text2:#8b949e;--text3:#484f58;--accent:#4f6ef7;--accent2:#79a7ff;--red:#f85149;--blue:#58a6ff;--green:#3fb950;--orange:#d29922;--board-bg:#0d1117;--board-line:#21262d;--board-piece1:#f85149;--board-piece2:#58a6ff;--board-bg1:rgba(248,81,73,0.12);--board-bg2:rgba(79,110,247,0.12);--board-label:#484f58;--board-highlight:#f85149}
+body.theme-ide{--bg:#1e1e1e;--bg2:#252526;--bg3:#333333;--border:#3c3c3c;--text:#cccccc;--text2:#858585;--text3:#6a6a6a;--accent:#007acc;--accent2:#1e90ff;--board-bg:#1e1e1e;--board-line:#2d2d2d;--board-piece1:#569cd6;--board-piece2:#6a9955;--board-bg1:rgba(86,156,214,0.1);--board-bg2:rgba(106,153,85,0.1);--board-label:#555;--board-highlight:#569cd6}
+body.theme-ppt{--bg:#1a1a2e;--bg2:#222244;--bg3:#2a2a4a;--border:#333366;--text:#d0d0e0;--text2:#8888aa;--text3:#555577;--accent:#e94560;--accent2:#ff6b81;--board-bg:#1a1a2e;--board-line:#2a2a4a;--board-piece1:#e94560;--board-piece2:#4ecdc4;--board-bg1:rgba(233,69,96,0.1);--board-bg2:rgba(78,205,196,0.1);--board-label:#555577;--board-highlight:#e94560}
+body.theme-notebook{--bg:#191919;--bg2:#202020;--bg3:#2a2a2a;--border:#333;--text:#b8b8b8;--text2:#777;--text3:#555;--accent:#238636;--accent2:#56d364;--board-bg:#1c1c1c;--board-line:#2a2a2a;--board-piece1:#e06c75;--board-piece2:#61afef;--board-bg1:rgba(224,108,117,0.08);--board-bg2:rgba(97,175,239,0.08);--board-label:#444;--board-highlight:#e06c75}
 
-  /* Score display */
-  .score-row { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 0; }
-  .score-num { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .score-num.red { color: #f85149; }
-  .score-num.blue { color: #58a6ff; }
-  .score-sep { font-size: 20px; color: #484f58; font-weight: 300; }
-  .score-labels { display: flex; justify-content: space-between; font-size: 10px; color: #484f58; padding: 0 4px; }
+body{background:var(--bg);color:var(--text)}
 
-  /* Emoji reactions */
-  .react-bar { display: flex; gap: 4px; margin-top: 6px; justify-content: center; flex-wrap: wrap; }
-  .react-btn { background: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 6px 8px; font-size: 18px; cursor: pointer; transition: all 0.15s; line-height: 1; min-width: 36px; text-align: center; }
-  .react-btn:active { transform: scale(1.2); background: #30363d; }
-  .float-emoji {
-    position: fixed; font-size: 48px; pointer-events: none; z-index: 300;
-    animation: floatUp 2s ease-out forwards;
-  }
-  @keyframes floatUp {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    70% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(-200px) scale(1.5); }
-  }
+/* === Layout === */
+@media(min-width:800px){body{padding:16px 28px}.topbar{padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:16px}.main{display:flex;gap:20px}.left-panel{flex:1;min-width:0}.right-panel{width:260px;flex-shrink:0}.mobile-only{display:none!important}}
+@media(max-width:799px){body{padding:6px 10px;padding-bottom:50px}.topbar{padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px}.topbar-sub{display:none}.main{display:flex;flex-direction:column;gap:10px}.right-panel{width:100%}.desktop-only{display:none!important}.matrix-container{padding:8px}.filter-bar{display:none}.card{padding:10px;margin-bottom:8px}.section-title{margin-bottom:6px;font-size:11px}.statusbar{display:none}}
 
-  /* Lobby overlay */
-  #lobby-overlay { display: none; position: fixed; inset: 0; background: rgba(13,17,23,0.95); z-index: 100; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
-  #lobby-overlay.show { display: flex; }
-  .lobby-card { background: #161b22; border-radius: 10px; padding: 24px; max-width: 460px; width: 100%; border: 1px solid #21262d; }
-  .lobby-card h3 { font-size: 16px; color: #e6edf3; margin-bottom: 4px; }
-  .lobby-card > p { font-size: 12px; color: #8b949e; margin-bottom: 14px; }
-  .lobby-tabs { display: flex; margin-bottom: 14px; border-bottom: 2px solid #21262d; }
-  .lobby-tab { flex: 1; text-align: center; padding: 10px; font-size: 12px; cursor: pointer; color: #484f58; border-bottom: 2px solid transparent; margin-bottom: -2px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-  .lobby-tab.active { color: #79a7ff; border-bottom-color: #4f6ef7; }
-  .lobby-step { display: none; flex-direction: column; gap: 10px; }
-  .lobby-step.active { display: flex; }
-  .lobby-step label { font-size: 12px; color: #8b949e; line-height: 1.4; }
-  .lobby-step textarea { width: 100%; min-height: 90px; padding: 10px; border: 1px solid #30363d; border-radius: 6px; font-size: 11px; font-family: 'SF Mono', Menlo, monospace; resize: none; outline: none; word-break: break-all; line-height: 1.4; background: #0d1117; color: #c9d1d9; -webkit-appearance: none; }
-  .lobby-step textarea:focus { border-color: #4f6ef7; }
-  .lobby-input { width: 100%; padding: 14px; border: 1px solid #30363d; border-radius: 8px; font-size: 22px; font-family: 'SF Mono', Menlo, monospace; text-align: center; letter-spacing: 6px; text-transform: uppercase; outline: none; background: #0d1117; color: #e6edf3; }
-  .lobby-input:focus { border-color: #4f6ef7; }
-  .room-code-display { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 16px; text-align: center; font-size: 32px; font-family: 'SF Mono', Menlo, monospace; letter-spacing: 8px; color: #79a7ff; font-weight: 700; user-select: all; }
-  .token-info { font-size: 10px; color: #484f58; text-align: right; margin-top: -4px; }
-  .lobby-hint { font-size: 11px; color: #484f58; text-align: center; }
-  .lobby-status { font-size: 12px; color: #d29922; min-height: 18px; word-break: break-all; margin-top: 8px; }
+/* === Topbar === */
+.topbar{display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:8px}
+.topbar-logo{width:24px;height:24px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+.topbar-title{font-size:13px;font-weight:600;color:var(--text)}
+.topbar-sub{font-size:11px;color:var(--text3);margin-left:4px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-right span{font-size:10px;color:var(--text3)}
+.topbar-avatar{width:24px;height:24px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3)}
 
-  /* Result overlay */
-  #result-overlay { display: none; position: fixed; inset: 0; background: rgba(13,17,23,0.9); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
-  #result-overlay.show { display: flex; }
-  .result-card { background: #161b22; border-radius: 10px; padding: 28px; text-align: center; border: 1px solid #21262d; width: 100%; max-width: 360px; }
-  .result-card h3 { font-size: 18px; color: #e6edf3; margin-bottom: 6px; }
-  .result-card p { font-size: 13px; color: #8b949e; margin-bottom: 16px; }
-  .result-btns { display: flex; gap: 8px; justify-content: center; }
-  .copy-toast { position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: #30363d; color: #e6edf3; padding: 8px 20px; border-radius: 16px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; }
-  .copy-toast.show { opacity: 1; }
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .stats-grid .card { margin-bottom: 0; }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #484f58; border-top-color: #79a7ff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* === IDE theme: tab bar === */
+.theme-ide .topbar{background:#323233;margin:-16px -28px 16px;padding:6px 28px 0}
+@media(max-width:799px){.theme-ide .topbar{margin:-6px -10px 8px;padding:4px 10px 0}}
+.theme-ide .topbar-logo{background:#007acc;border-radius:3px}
+.theme-ide .ide-tabs{display:flex;gap:0;margin-left:16px}
+.theme-ide .ide-tab{font-size:11px;padding:4px 12px;background:#2d2d2d;color:#888;border-top:2px solid transparent;cursor:default}
+.theme-ide .ide-tab.active{background:#1e1e1e;color:#ccc;border-top-color:#007acc}
+/* PPT theme: slide indicator */
+.theme-ppt .topbar-logo{background:var(--accent);border-radius:3px}
+.theme-ppt .ppt-slide-num{font-size:10px;color:var(--text3);background:var(--bg3);padding:2px 8px;border-radius:3px}
+/* Notebook theme */
+.theme-notebook .topbar-logo{background:var(--accent);border-radius:50%}
+
+/* === Components === */
+.section-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.dot-indicator{width:5px;height:5px;border-radius:50%;display:inline-block}
+.dot-green{background:var(--green)}.dot-orange{background:var(--orange)}.dot-red{background:var(--red)}
+.matrix-container{background:var(--bg2);border-radius:6px;padding:12px;border:1px solid var(--border)}
+.matrix-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.matrix-header h3{font-size:13px;font-weight:600;color:var(--text)}
+.badge{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:500}
+.badge-ok{background:rgba(63,185,80,.15);color:var(--green)}.badge-warn{background:rgba(210,153,34,.15);color:var(--orange)}.badge-err{background:rgba(248,81,73,.15);color:var(--red)}
+.filter-bar{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.filter-tag{font-size:9px;padding:2px 7px;border-radius:3px;background:var(--bg);color:var(--text3);border:1px solid var(--border)}
+.filter-tag.active{background:rgba(79,110,247,.1);color:var(--accent2);border-color:rgba(79,110,247,.25)}
+.canvas-wrap{display:flex;justify-content:center;overflow:hidden;position:relative}
+canvas{display:block;cursor:default;touch-action:none;max-width:100%;height:auto;opacity:.92}
+.card{background:var(--bg2);border-radius:6px;padding:12px;border:1px solid var(--border);margin-bottom:10px}
+.card-title{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px}
+.stat-label{color:var(--text2)}.stat-value{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.stat-value.green{color:var(--green)}.stat-value.red{color:var(--red)}.stat-value.orange{color:var(--orange)}
+.progress-bar{height:2px;background:var(--bg3);border-radius:2px;margin-top:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .3s}
+.log-list{max-height:120px;overflow-y:auto}
+.log-item{font-size:10px;color:var(--text2);padding:2px 0;border-bottom:1px solid var(--border);display:flex;gap:5px}
+.log-item:last-child{border:none}
+.log-time{color:var(--text3);flex-shrink:0;font-variant-numeric:tabular-nums}
+.statusbar{margin-top:10px;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--text3);padding:6px 0;border-top:1px solid var(--border)}
+.status-dot{width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;margin-right:3px}
+.btn-row{display:flex;gap:6px;margin-top:6px}
+.btn{padding:8px 12px;font-size:12px;border:none;border-radius:5px;cursor:pointer;font-weight:600;transition:all .15s;flex:1;text-align:center;min-height:40px;display:flex;align-items:center;justify-content:center}
+.btn-primary{background:var(--accent);color:#fff}.btn-secondary{background:var(--bg3);color:var(--text2)}
+#undo-btn{position:relative;overflow:hidden}
+#undo-btn.show{display:flex!important;background:rgba(79,110,247,.15);color:var(--accent2);border:1px solid rgba(79,110,247,.25)}
+
+/* === Score === */
+.score-row{display:flex;align-items:center;justify-content:center;gap:14px;padding:6px 0}
+.score-num{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.score-num.red{color:var(--board-piece1)}.score-num.blue{color:var(--board-piece2)}
+.score-sep{font-size:18px;color:var(--text3);font-weight:300}
+.score-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);padding:0 2px}
+
+/* === Reactions === */
+.react-bar{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
+.react-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:16px;cursor:pointer;transition:all .15s;line-height:1;min-width:32px;text-align:center}
+.react-btn:active{transform:scale(1.2)}
+.float-emoji{position:fixed;font-size:42px;pointer-events:none;z-index:300;animation:floatUp 2s ease-out forwards}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}70%{opacity:1}100%{opacity:0;transform:translateY(-180px) scale(1.4)}}
+
+/* === Theme Switcher === */
+.theme-switcher{position:fixed;top:12px;right:60px;z-index:500;display:flex;gap:3px;align-items:center}
+.theme-switcher .ts-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:10px;padding:3px 7px;border-radius:4px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.theme-switcher .ts-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.theme-switcher .ts-btn:hover{border-color:var(--accent)}
+@media(max-width:799px){.theme-switcher{top:6px;right:40px;gap:2px}.theme-switcher .ts-btn{font-size:9px;padding:2px 5px}}
+
+/* === Lobby === */
+#lobby-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+#lobby-overlay.show{display:flex}
+.lobby-card{background:var(--bg2);border-radius:8px;padding:20px;max-width:440px;width:100%;border:1px solid var(--border)}
+.lobby-card h3{font-size:15px;color:var(--text);margin-bottom:3px}
+.lobby-card>p{font-size:11px;color:var(--text2);margin-bottom:12px}
+.lobby-tabs{display:flex;margin-bottom:12px;border-bottom:2px solid var(--border)}
+.lobby-tab{flex:1;text-align:center;padding:8px;font-size:11px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px;min-height:40px;display:flex;align-items:center;justify-content:center}
+.lobby-tab.active{color:var(--accent2);border-bottom-color:var(--accent)}
+.lobby-step{display:none;flex-direction:column;gap:8px}.lobby-step.active{display:flex}
+.lobby-step label{font-size:11px;color:var(--text2);line-height:1.4}
+.lobby-step textarea{width:100%;min-height:80px;padding:8px;border:1px solid var(--border);border-radius:5px;font-size:10px;font-family:'SF Mono',Menlo,monospace;resize:none;outline:none;word-break:break-all;line-height:1.4;background:var(--bg);color:var(--text);-webkit-appearance:none}
+.lobby-step textarea:focus{border-color:var(--accent)}
+.lobby-input{width:100%;padding:12px;border:1px solid var(--border);border-radius:6px;font-size:20px;font-family:'SF Mono',Menlo,monospace;text-align:center;letter-spacing:5px;text-transform:uppercase;outline:none;background:var(--bg);color:var(--text)}
+.lobby-input:focus{border-color:var(--accent)}
+.room-code-display{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center;font-size:28px;font-family:'SF Mono',Menlo,monospace;letter-spacing:6px;color:var(--accent2);font-weight:700;user-select:all}
+.token-info{font-size:9px;color:var(--text3);text-align:right;margin-top:-3px}
+.lobby-hint{font-size:10px;color:var(--text3);text-align:center}
+.lobby-status{font-size:11px;color:var(--orange);min-height:16px;word-break:break-all;margin-top:6px}
+
+/* === Result === */
+#result-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100;align-items:center;justify-content:center;padding:16px}
+#result-overlay.show{display:flex}
+.result-card{background:var(--bg2);border-radius:8px;padding:24px;text-align:center;border:1px solid var(--border);width:100%;max-width:340px}
+.result-card h3{font-size:16px;color:var(--text);margin-bottom:5px}
+.result-card p{font-size:12px;color:var(--text2);margin-bottom:14px}
+.result-btns{display:flex;gap:6px;justify-content:center}
+.copy-toast{position:fixed;top:44px;left:50%;transform:translateX(-50%);background:var(--bg3);color:var(--text);padding:6px 16px;border-radius:14px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200}
+.copy-toast.show{opacity:1}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.stats-grid .card{margin-bottom:0}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--text3);border-top-color:var(--accent2);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* === IDE extras === */
+.ide-sidebar{display:none}
+body.theme-ide .ide-sidebar{display:block;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:10px}
+.ide-sidebar .file-tree{font-size:10px;font-family:'SF Mono',Menlo,monospace;color:var(--text3);line-height:1.8}
+.ide-sidebar .file-tree .active-file{color:var(--accent2)}
+/* PPT extras */
+.ppt-notes{display:none}
+body.theme-ppt .ppt-notes{display:block;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:10px;font-size:10px;color:var(--text3);line-height:1.6}
+/* Notebook extras */
+.nb-breadcrumb{display:none}
+body.theme-notebook .nb-breadcrumb{display:flex;gap:6px;font-size:10px;color:var(--text3);margin-bottom:8px;align-items:center}
+body.theme-notebook .nb-breadcrumb span{opacity:.6}
+body.theme-notebook .nb-breadcrumb span.active-crumb{opacity:1;color:var(--text)}
 </style>
 </head>
 <body>
 
+<!-- Theme Switcher -->
+<div class="theme-switcher">
+  <button class="ts-btn active" onclick="setTheme('monitor')" data-theme="monitor">Monitor</button>
+  <button class="ts-btn" onclick="setTheme('ide')" data-theme="ide">IDE</button>
+  <button class="ts-btn" onclick="setTheme('ppt')" data-theme="ppt">Slides</button>
+  <button class="ts-btn" onclick="setTheme('notebook')" data-theme="notebook">Notes</button>
+  <button class="ts-btn" onclick="toggleLang()" id="lang-btn">中</button>
+</div>
+
+<!-- Topbar -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="topbar-logo">Q</div>
-    <span class="topbar-title">AIGC Pipeline Monitor</span>
-    <span class="topbar-sub">Quality Audit v2.4</span>
+    <div class="topbar-logo" id="topbar-logo">Q</div>
+    <span class="topbar-title" id="topbar-title">AIGC Pipeline Monitor</span>
+    <span class="topbar-sub" id="topbar-sub">Quality Audit v2.4</span>
+    <div class="ide-tabs" style="display:none" id="ide-tabs">
+      <span class="ide-tab active">main.py</span>
+      <span class="ide-tab">config.yaml</span>
+      <span class="ide-tab">utils.py</span>
+    </div>
+    <span class="ppt-slide-num" style="display:none" id="ppt-slide">Slide 3 / 12</span>
   </div>
   <div class="topbar-right">
     <span id="clock"></span>
@@ -159,10 +180,34 @@
 
 <div class="main">
   <div class="left-panel">
-    <div class="section-title"><span class="dot-indicator dot-green"></span> Cross-Validation Matrix</div>
+    <!-- IDE: file tree sidebar -->
+    <div class="ide-sidebar">
+      <div class="card-title">Explorer</div>
+      <div class="file-tree">
+        📁 src/<br>
+        &nbsp;&nbsp;📁 models/<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;📄 pipeline.py<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;📄 evaluator.py<br>
+        &nbsp;&nbsp;📁 utils/<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;📄 helpers.py<br>
+        &nbsp;&nbsp;📄 <span class="active-file">main.py</span><br>
+        📁 tests/<br>
+        📄 requirements.txt
+      </div>
+    </div>
+    <!-- Notebook: breadcrumb -->
+    <div class="nb-breadcrumb">
+      <span>Workspace</span> <span>/</span> <span>Projects</span> <span>/</span> <span class="active-crumb" id="nb-page">Meeting Notes</span>
+    </div>
+    <!-- PPT: presenter notes -->
+    <div class="ppt-notes" id="ppt-notes">
+      Speaker Notes: Cross-validation heatmap shows dimension-case coverage. Red nodes = Reviewer A flagged, Blue = Reviewer B flagged. Target: 5 consecutive matches triggers audit completion.
+    </div>
+
+    <div class="section-title"><span class="dot-indicator dot-green"></span> <span id="section-label">Cross-Validation Matrix</span></div>
     <div class="matrix-container">
       <div class="matrix-header">
-        <h3>Dimension-Case Heatmap</h3>
+        <h3 id="matrix-title">Dimension-Case Heatmap</h3>
         <span class="badge badge-ok" id="status-badge">Running</span>
       </div>
       <div class="filter-bar">
@@ -177,60 +222,58 @@
   </div>
 
   <div class="right-panel">
-    <!-- Score -->
     <div class="card">
-      <div class="card-title">Score</div>
+      <div class="card-title" id="score-title">Score</div>
       <div class="score-row">
         <span class="score-num red" id="score-a">0</span>
         <span class="score-sep">:</span>
         <span class="score-num blue" id="score-b">0</span>
       </div>
-      <div class="score-labels"><span>Reviewer A</span><span>Reviewer B</span></div>
+      <div class="score-labels"><span id="score-la">Reviewer A</span><span id="score-lb">Reviewer B</span></div>
     </div>
 
     <div class="stats-grid mobile-only">
       <div class="card">
-        <div class="card-title">Summary</div>
-        <div class="stat-row"><span class="stat-label">Cells</span><span class="stat-value" id="stat-total-m">0/225</span></div>
+        <div class="card-title" id="summary-title-m">Summary</div>
+        <div class="stat-row"><span class="stat-label" id="sl-cells-m">Cells</span><span class="stat-value" id="stat-total-m">0/225</span></div>
         <div class="stat-row"><span class="stat-label">A (P0)</span><span class="stat-value" id="stat-black-m">0</span></div>
         <div class="stat-row"><span class="stat-label">B (P1)</span><span class="stat-value" id="stat-white-m">0</span></div>
       </div>
       <div class="card">
-        <div class="card-title">Session</div>
-        <div class="stat-row"><span class="stat-label">Status</span><span class="stat-value green" id="turn-status-m">● A</span></div>
-        <div class="stat-row"><span class="stat-label">Turn</span><span class="stat-value" id="stat-turn-m">1</span></div>
-        <div class="stat-row"><span class="stat-label">Role</span><span class="stat-value" id="stat-mode-m" style="font-size:11px">—</span></div>
+        <div class="card-title" id="session-title-m">Session</div>
+        <div class="stat-row"><span class="stat-label" id="sl-status-m">Status</span><span class="stat-value green" id="turn-status-m">● A</span></div>
+        <div class="stat-row"><span class="stat-label" id="sl-turn-m">Turn</span><span class="stat-value" id="stat-turn-m">1</span></div>
+        <div class="stat-row"><span class="stat-label" id="sl-role-m">Role</span><span class="stat-value" id="stat-mode-m" style="font-size:10px">—</span></div>
       </div>
     </div>
 
     <div class="desktop-only">
       <div class="card">
-        <div class="card-title">Audit Summary</div>
-        <div class="stat-row"><span class="stat-label">Total Cells</span><span class="stat-value" id="stat-total">0 / 225</span></div>
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%;background:#4f6ef7"></div></div>
-        <div style="height:8px"></div>
-        <div class="stat-row"><span class="stat-label">Reviewer A (P0)</span><span class="stat-value" id="stat-black">0</span></div>
-        <div class="stat-row"><span class="stat-label">Reviewer B (P1)</span><span class="stat-value" id="stat-white">0</span></div>
-        <div class="stat-row"><span class="stat-label">Pending</span><span class="stat-value orange" id="stat-pending">225</span></div>
+        <div class="card-title" id="summary-title">Audit Summary</div>
+        <div class="stat-row"><span class="stat-label" id="sl-total">Total Cells</span><span class="stat-value" id="stat-total">0 / 225</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%;background:var(--accent)"></div></div>
+        <div style="height:6px"></div>
+        <div class="stat-row"><span class="stat-label" id="sl-a">Reviewer A (P0)</span><span class="stat-value" id="stat-black">0</span></div>
+        <div class="stat-row"><span class="stat-label" id="sl-b">Reviewer B (P1)</span><span class="stat-value" id="stat-white">0</span></div>
+        <div class="stat-row"><span class="stat-label" id="sl-pending">Pending</span><span class="stat-value orange" id="stat-pending">225</span></div>
       </div>
       <div class="card">
-        <div class="card-title">Current Session</div>
+        <div class="card-title" id="session-title">Current Session</div>
         <div class="stat-row"><span class="stat-label">Status</span><span class="stat-value green" id="turn-status">● Reviewer A</span></div>
         <div class="stat-row"><span class="stat-label">Turn</span><span class="stat-value" id="stat-turn">1</span></div>
-        <div class="stat-row"><span class="stat-label">Mode</span><span class="stat-value" id="stat-mode" style="font-size:11px">—</span></div>
+        <div class="stat-row"><span class="stat-label">Mode</span><span class="stat-value" id="stat-mode" style="font-size:10px">—</span></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Activity Log</div>
+      <div class="card-title" id="log-title">Activity Log</div>
       <div class="log-list" id="log-list">
         <div class="log-item"><span class="log-time">--:--</span><span>Waiting for session…</span></div>
       </div>
     </div>
 
-    <!-- Emoji reactions -->
     <div class="card">
-      <div class="card-title">Reactions</div>
+      <div class="card-title" id="react-title">Reactions</div>
       <div class="react-bar">
         <button class="react-btn" onclick="sendReaction('👍')">👍</button>
         <button class="react-btn" onclick="sendReaction('👎')">👎</button>
@@ -245,49 +288,45 @@
 
     <div class="btn-row">
       <button class="btn btn-secondary" id="undo-btn" onclick="undoMove()" style="display:none">Undo</button>
-      <button class="btn btn-secondary" onclick="restart()">Reset</button>
-      <button class="btn btn-secondary" onclick="showLobby()">New Session</button>
+      <button class="btn btn-secondary" onclick="restart()" id="btn-reset">Reset</button>
+      <button class="btn btn-secondary" onclick="showLobby()" id="btn-new">New Session</button>
     </div>
   </div>
 </div>
 
 <div class="statusbar">
-  <span><span class="status-dot"></span>Connected · P2P</span>
-  <span>AIGC Quality Audit © 2026</span>
+  <span><span class="status-dot"></span><span id="sb-conn">Connected · P2P</span></span>
+  <span id="sb-copy">AIGC Quality Audit © 2026</span>
 </div>
 
 <!-- Lobby -->
 <div id="lobby-overlay" class="show">
   <div class="lobby-card">
-    <h3>Session Setup</h3>
-    <p>Create or join a multiplayer session</p>
+    <h3 id="lobby-title">Session Setup</h3>
+    <p id="lobby-desc">Create or join a multiplayer session</p>
     <div class="lobby-tabs">
-      <div class="lobby-tab active" id="ltab-quick" onclick="switchLobbyTab('quick')">Quick Match</div>
-      <div class="lobby-tab" id="ltab-create" onclick="switchLobbyTab('create')">Manual</div>
-      <div class="lobby-tab" id="ltab-join" onclick="switchLobbyTab('join')">Join Code</div>
+      <div class="lobby-tab active" id="ltab-quick" onclick="switchLobbyTab('quick')" data-i18n="tab-quick">Quick Match</div>
+      <div class="lobby-tab" id="ltab-create" onclick="switchLobbyTab('create')" data-i18n="tab-create">Manual</div>
+      <div class="lobby-tab" id="ltab-join" onclick="switchLobbyTab('join')" data-i18n="tab-join">Join Code</div>
     </div>
-
-    <!-- Quick Match -->
     <div class="lobby-step active" id="lstep-quick-create">
-      <label>Create a room and share the code with your friend</label>
-      <button class="btn btn-primary" onclick="quickCreate()">Create Room</button>
+      <label id="lb-quick-create-label">Create a room and share the code</label>
+      <button class="btn btn-primary" onclick="quickCreate()" id="btn-create-room">Create Room</button>
     </div>
     <div class="lobby-step" id="lstep-quick-waiting">
-      <label>Share this room code with your friend:</label>
+      <label id="lb-share-code">Share this room code:</label>
       <div class="room-code-display" id="room-code-display">----</div>
-      <button class="btn btn-secondary" onclick="copyRoomCode()">Copy Room Code</button>
-      <div class="lobby-status" id="quick-status"><span class="spinner"></span>Waiting for opponent...</div>
+      <button class="btn btn-secondary" onclick="copyRoomCode()">Copy Code</button>
+      <div class="lobby-status" id="quick-status"><span class="spinner"></span>Waiting...</div>
     </div>
     <div class="lobby-step" id="lstep-quick-join">
-      <label>Enter the room code from your friend</label>
+      <label id="lb-enter-code">Enter room code</label>
       <input class="lobby-input" id="room-code-input" maxlength="6" placeholder="—" autocomplete="off" autocapitalize="characters">
-      <button class="btn btn-primary" onclick="quickJoin()">Join Room</button>
+      <button class="btn btn-primary" onclick="quickJoin()" id="btn-join-room">Join Room</button>
       <div class="lobby-status" id="quick-join-status"></div>
     </div>
-
-    <!-- Manual Create -->
     <div class="lobby-step" id="lstep-create-1">
-      <label>Tap to generate an invite code, then share it with your friend</label>
+      <label>Tap to generate an invite code</label>
       <button class="btn btn-primary" onclick="generateOffer()">Generate Invite Code</button>
     </div>
     <div class="lobby-step" id="lstep-create-2">
@@ -297,22 +336,18 @@
       <button class="btn btn-secondary" onclick="copyText('offerOutput')">Copy Code</button>
       <label>Step 2: Paste your friend's response code</label>
       <textarea id="answerInput" placeholder="Paste response code here"></textarea>
-      <div class="token-info" id="answer-len"></div>
       <button class="btn btn-primary" onclick="acceptAnswer()">Connect</button>
     </div>
-
-    <!-- Manual Join -->
     <div class="lobby-step" id="lstep-join-1">
       <label>Paste the invite code from your friend</label>
       <textarea id="offerInput" placeholder="Paste invite code here"></textarea>
       <button class="btn btn-primary" onclick="acceptOffer()">Generate Response</button>
     </div>
     <div class="lobby-step" id="lstep-join-2">
-      <label>Copy this response code and send it back</label>
+      <label>Copy this response and send it back</label>
       <textarea id="answerOutput" readonly></textarea>
       <div class="token-info" id="answer-out-len"></div>
       <button class="btn btn-secondary" onclick="copyText('answerOutput')">Copy Response</button>
-      <div class="lobby-hint">Game starts automatically once connected</div>
     </div>
     <div class="lobby-status" id="lobby-status"></div>
   </div>
@@ -324,8 +359,8 @@
     <h3 id="result-title"></h3>
     <p id="result-sub"></p>
     <div class="result-btns">
-      <button class="btn btn-primary" onclick="restart()">Play Again</button>
-      <button class="btn btn-secondary" onclick="showLobby()">Quit</button>
+      <button class="btn btn-primary" onclick="restart()" id="btn-play-again">Play Again</button>
+      <button class="btn btn-secondary" onclick="showLobby()" id="btn-quit">Quit</button>
     </div>
   </div>
 </div>
@@ -333,542 +368,228 @@
 <div class="copy-toast" id="toast">Copied</div>
 
 <script>
+// ===== i18n =====
+let lang = 'en';
+const I18N = {
+  'tab-quick':    { en: 'Quick Match', zh: '快速匹配' },
+  'tab-create':   { en: 'Manual',      zh: '手动连接' },
+  'tab-join':     { en: 'Join Code',   zh: '加入房间' },
+  'lobby-title':  { en: 'Session Setup',       zh: '联机设置' },
+  'lobby-desc':   { en: 'Create or join a multiplayer session', zh: '创建或加入多人对局' },
+  'lb-quick-create-label': { en: 'Create a room and share the code', zh: '创建房间，把房间号发给朋友' },
+  'btn-create-room': { en: 'Create Room', zh: '创建房间' },
+  'lb-share-code':   { en: 'Share this room code:', zh: '把房间号发给朋友：' },
+  'lb-enter-code':   { en: 'Enter room code', zh: '输入房间号' },
+  'btn-join-room':   { en: 'Join Room', zh: '加入房间' },
+  'score-title':  { en: 'Score',  zh: '比分' },
+  'score-la':     { en: 'Reviewer A', zh: '红方' },
+  'score-lb':     { en: 'Reviewer B', zh: '蓝方' },
+  'summary-title':{ en: 'Audit Summary', zh: '审计概览' },
+  'summary-title-m':{ en: 'Summary', zh: '概览' },
+  'session-title':{ en: 'Current Session', zh: '当前会话' },
+  'session-title-m':{ en: 'Session', zh: '会话' },
+  'log-title':    { en: 'Activity Log', zh: '操作记录' },
+  'react-title':  { en: 'Reactions', zh: '表情' },
+  'section-label':{ en: 'Cross-Validation Matrix', zh: '交叉验证矩阵' },
+  'matrix-title': { en: 'Dimension-Case Heatmap', zh: '维度-用例热力图' },
+  'sl-total':     { en: 'Total Cells', zh: '已填格' },
+  'sl-a':         { en: 'Reviewer A (P0)', zh: '红方 (P0)' },
+  'sl-b':         { en: 'Reviewer B (P1)', zh: '蓝方 (P1)' },
+  'sl-pending':   { en: 'Pending', zh: '待处理' },
+  'sl-cells-m':   { en: 'Cells', zh: '已填' },
+  'sl-status-m':  { en: 'Status', zh: '状态' },
+  'sl-turn-m':    { en: 'Turn', zh: '回合' },
+  'sl-role-m':    { en: 'Role', zh: '角色' },
+  'btn-reset':    { en: 'Reset', zh: '重置' },
+  'btn-new':      { en: 'New Session', zh: '新会话' },
+  'btn-play-again':{ en: 'Play Again', zh: '再来一局' },
+  'btn-quit':     { en: 'Quit', zh: '退出' },
+  'sb-conn':      { en: 'Connected · P2P', zh: '已连接 · P2P' },
+  'sb-copy':      { en: 'AIGC Quality Audit © 2026', zh: 'AIGC 质量审计 © 2026' },
+};
+const TITLES = {
+  monitor:  { en: 'AIGC Pipeline Monitor', zh: 'AIGC 流水线监控' },
+  ide:      { en: 'main.py — VS Code',     zh: 'main.py — VS Code' },
+  ppt:      { en: 'Q4 Review — Slides',    zh: 'Q4 述职 — 演示文稿' },
+  notebook: { en: 'Meeting Notes',          zh: '会议纪要' },
+};
+const TOPBAR = {
+  monitor:  { logo: 'Q', title: { en: 'AIGC Pipeline Monitor', zh: 'AIGC 流水线监控' }, sub: { en: 'Quality Audit v2.4', zh: '质量审计 v2.4' } },
+  ide:      { logo: '</>', title: { en: 'Visual Studio Code', zh: 'Visual Studio Code' }, sub: { en: 'workspace', zh: '工作区' } },
+  ppt:      { logo: '▶', title: { en: 'Q4 Performance Review', zh: 'Q4 绩效述职' }, sub: { en: 'Slide 3/12', zh: '第3页/共12页' } },
+  notebook: { logo: 'N', title: { en: 'Notion — Workspace', zh: 'Notion — 工作区' }, sub: { en: 'last edited 2m ago', zh: '2分钟前编辑' } },
+};
+const NOTES = {
+  en: "Speaker Notes: Cross-validation heatmap shows dimension-case coverage. Red nodes = Reviewer A flagged, Blue = Reviewer B flagged. Target: 5 consecutive matches triggers audit completion.",
+  zh: "演讲者备注：交叉验证热力图展示维度-用例覆盖情况。红色节点 = 红方标记，蓝色 = 蓝方标记。目标：连续5个匹配触发审计完成。"
+};
+const IDE_FILES = {
+  en: '📁 src/<br>&nbsp;&nbsp;📁 models/<br>&nbsp;&nbsp;&nbsp;&nbsp;📄 pipeline.py<br>&nbsp;&nbsp;&nbsp;&nbsp;📄 evaluator.py<br>&nbsp;&nbsp;📁 utils/<br>&nbsp;&nbsp;&nbsp;&nbsp;📄 helpers.py<br>&nbsp;&nbsp;📄 <span class="active-file">main.py</span><br>📁 tests/<br>📄 requirements.txt',
+  zh: '📁 src/<br>&nbsp;&nbsp;📁 models/<br>&nbsp;&nbsp;&nbsp;&nbsp;📄 pipeline.py<br>&nbsp;&nbsp;&nbsp;&nbsp;📄 evaluator.py<br>&nbsp;&nbsp;📁 utils/<br>&nbsp;&nbsp;&nbsp;&nbsp;📄 helpers.py<br>&nbsp;&nbsp;📄 <span class="active-file">main.py</span><br>📁 tests/<br>📄 requirements.txt'
+};
+
+function applyLang() {
+  document.getElementById('lang-btn').textContent = lang === 'en' ? '中' : 'EN';
+  for (const [id, pair] of Object.entries(I18N)) {
+    const el = document.getElementById(id);
+    if (el && pair[lang]) el.textContent = pair[lang];
+  }
+  const t = TOPBAR[curTheme] || TOPBAR.monitor;
+  document.getElementById('topbar-logo').textContent = t.logo;
+  document.getElementById('topbar-title').textContent = t.title[lang];
+  document.getElementById('topbar-sub').textContent = t.sub[lang];
+  document.title = TITLES[curTheme]?.[lang] || TITLES.monitor[lang];
+  document.getElementById('ppt-notes').textContent = NOTES[lang];
+  document.querySelector('.file-tree').innerHTML = IDE_FILES[lang];
+  document.getElementById('nb-page').textContent = TITLES.notebook[lang];
+  document.getElementById('ppt-slide').textContent = lang === 'en' ? 'Slide 3 / 12' : '第3页 / 共12页';
+  if (grid) updateUI();
+}
+function toggleLang() { lang = lang === 'en' ? 'zh' : 'en'; applyLang(); }
+
+// ===== Themes =====
+let curTheme = 'monitor';
+function setTheme(t) {
+  curTheme = t;
+  document.body.className = t === 'monitor' ? '' : 'theme-' + t;
+  document.querySelectorAll('.ts-btn[data-theme]').forEach(b => b.classList.toggle('active', b.dataset.theme === t));
+  document.getElementById('ide-tabs').style.display = t === 'ide' ? '' : 'none';
+  document.getElementById('ppt-slide').style.display = t === 'ppt' ? '' : 'none';
+  applyLang();
+  if (grid) draw();
+}
+
 // ===== GitHub Signaling =====
 const _s=[103,104,112,95,74,111,82,108,98,107,82,88,68,87,69,68,107,119,107,76,114,98,108,118,99,80,84,102,50,55,112,53,105,49,48,112,66,99,100,69];
-const GH_TOKEN = String.fromCharCode(..._s);
-const GH_REPO = 'yexxiinnn/aigc-monitor';
-const GH_API = 'https://api.github.com/repos/' + GH_REPO + '/contents/signaling/';
-const GH_HEADERS = { 'Authorization': 'token ' + GH_TOKEN, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' };
+const GH_TOKEN=String.fromCharCode(..._s);
+const GH_REPO='yexxiinnn/aigc-monitor';
+const GH_API='https://api.github.com/repos/'+GH_REPO+'/contents/signaling/';
+const GH_HEADERS={'Authorization':'token '+GH_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'};
+function genRoomCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
+async function ghGet(p){const r=await fetch(GH_API+p,{headers:GH_HEADERS});if(!r.ok)return null;return await r.json()}
+async function ghPut(p,content,sha){const b={message:'signal',content:btoa(unescape(encodeURIComponent(content)))};if(sha)b.sha=sha;const r=await fetch(GH_API+p,{method:'PUT',headers:GH_HEADERS,body:JSON.stringify(b)});return r.ok}
+let signalPoller=null;
+function stopPolling(){if(signalPoller){clearInterval(signalPoller);signalPoller=null}}
 
-function genRoomCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
-async function ghGet(path) {
-  const r = await fetch(GH_API + path, { headers: GH_HEADERS });
-  if (!r.ok) return null;
-  return await r.json();
-}
-async function ghPut(path, content, sha) {
-  const body = { message: 'signal', content: btoa(unescape(encodeURIComponent(content))) };
-  if (sha) body.sha = sha;
-  const r = await fetch(GH_API + path, { method: 'PUT', headers: GH_HEADERS, body: JSON.stringify(body) });
-  return r.ok;
-}
-
-let signalPoller = null;
-function stopPolling() { if (signalPoller) { clearInterval(signalPoller); signalPoller = null; } }
-
-async function quickCreate() {
-  const code = genRoomCode();
-  showLobbyStep('quick-waiting');
-  document.getElementById('room-code-display').textContent = code;
-  setQuickStatus('<span class="spinner"></span>Creating room...');
-
-  myColor = 1;
-  createPC();
-  dc = pc.createDataChannel('audit', { ordered: true });
-  setupDC(dc);
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  await waitICE(pc);
-
-  const offerData = JSON.stringify({ offer: pc.localDescription });
-  const ok = await ghPut(code + '.json', offerData);
-  if (!ok) { setQuickStatus('Failed to create room. Try again.'); return; }
-
-  setQuickStatus('<span class="spinner"></span>Waiting for opponent to join...');
-  // Poll for answer
+async function quickCreate(){
+  const code=genRoomCode();showLobbyStep('quick-waiting');
+  document.getElementById('room-code-display').textContent=code;
+  setQuickStatus('<span class="spinner"></span>Creating...');
+  myColor=1;createPC();dc=pc.createDataChannel('audit',{ordered:true});setupDC(dc);
+  const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitICE(pc);
+  const ok=await ghPut(code+'.json',JSON.stringify({offer:pc.localDescription}));
+  if(!ok){setQuickStatus('Failed. Try again.');return}
+  setQuickStatus('<span class="spinner"></span>Waiting for opponent...');
   stopPolling();
-  signalPoller = setInterval(async () => {
-    try {
-      const file = await ghGet(code + '.json');
-      if (!file || !file.content) return;
-      const data = JSON.parse(decodeURIComponent(escape(atob(file.content))));
-      if (data.answer) {
-        stopPolling();
-        setQuickStatus('<span class="spinner"></span>Connecting...');
-        await pc.setRemoteDescription(data.answer);
-        startConnectionMonitor();
-      }
-    } catch(e) {}
-  }, 2500);
+  signalPoller=setInterval(async()=>{try{const f=await ghGet(code+'.json');if(!f||!f.content)return;const d=JSON.parse(decodeURIComponent(escape(atob(f.content))));if(d.answer){stopPolling();setQuickStatus('<span class="spinner"></span>Connecting...');await pc.setRemoteDescription(d.answer);startConnectionMonitor()}}catch(e){}},2500);
 }
-
-async function quickJoin() {
-  const code = (document.getElementById('room-code-input').value || '').trim().toUpperCase();
-  if (!code) { setQuickJoinStatus('Please enter a room code'); return; }
-
-  setQuickJoinStatus('<span class="spinner"></span>Looking for room...');
-  myColor = 2;
-
-  try {
-    const file = await ghGet(code + '.json');
-    if (!file || !file.content) { setQuickJoinStatus('Room not found. Check the code.'); return; }
-    const data = JSON.parse(decodeURIComponent(escape(atob(file.content))));
-    if (!data.offer) { setQuickJoinStatus('Room not ready. Try again in a moment.'); return; }
-
-    createPC();
-    pc.ondatachannel = e => { dc = e.channel; setupDC(dc); };
-    await pc.setRemoteDescription(data.offer);
-    const ans = await pc.createAnswer();
-    await pc.setLocalDescription(ans);
-    await waitICE(pc);
-
-    const updated = JSON.stringify({ offer: data.offer, answer: pc.localDescription });
-    const ok = await ghPut(code + '.json', updated, file.sha);
-    if (!ok) { setQuickJoinStatus('Failed to join. Try again.'); return; }
-
-    setQuickJoinStatus('<span class="spinner"></span>Connecting... Game starts shortly.');
-    startJoinerMonitor();
-  } catch(e) { setQuickJoinStatus('Error: ' + e.message); }
+async function quickJoin(){
+  const code=(document.getElementById('room-code-input').value||'').trim().toUpperCase();
+  if(!code){setQuickJoinStatus('Enter a room code');return}
+  setQuickJoinStatus('<span class="spinner"></span>Looking for room...');myColor=2;
+  try{const f=await ghGet(code+'.json');if(!f||!f.content){setQuickJoinStatus('Room not found.');return}
+  const d=JSON.parse(decodeURIComponent(escape(atob(f.content))));if(!d.offer){setQuickJoinStatus('Room not ready.');return}
+  createPC();pc.ondatachannel=e=>{dc=e.channel;setupDC(dc)};
+  await pc.setRemoteDescription(d.offer);const a=await pc.createAnswer();await pc.setLocalDescription(a);await waitICE(pc);
+  const ok=await ghPut(code+'.json',JSON.stringify({offer:d.offer,answer:pc.localDescription}),f.sha);
+  if(!ok){setQuickJoinStatus('Failed. Try again.');return}
+  setQuickJoinStatus('<span class="spinner"></span>Connecting...');startJoinerMonitor()}catch(e){setQuickJoinStatus('Error: '+e.message)}
 }
-
-function setQuickStatus(m) { document.getElementById('quick-status').innerHTML = m; }
-function setQuickJoinStatus(m) { document.getElementById('quick-join-status').innerHTML = m; }
-function copyRoomCode() {
-  const code = document.getElementById('room-code-display').textContent;
-  if (navigator.clipboard) navigator.clipboard.writeText(code);
-  const t = document.getElementById('toast'); t.textContent = 'Code copied: ' + code; t.classList.add('show');
-  setTimeout(() => { t.classList.remove('show'); t.textContent = 'Copied'; }, 1500);
-}
+function setQuickStatus(m){document.getElementById('quick-status').innerHTML=m}
+function setQuickJoinStatus(m){document.getElementById('quick-join-status').innerHTML=m}
+function copyRoomCode(){const c=document.getElementById('room-code-display').textContent;if(navigator.clipboard)navigator.clipboard.writeText(c);const t=document.getElementById('toast');t.textContent='Copied: '+c;t.classList.add('show');setTimeout(()=>{t.classList.remove('show');t.textContent='Copied'},1500)}
 
 // ===== Token compression =====
-async function compressToken(s) {
-  try {
-    const stream = new Blob([s]).stream().pipeThrough(new CompressionStream('deflate'));
-    const buf = await new Response(stream).arrayBuffer();
-    const b = new Uint8Array(buf); let bin = '';
-    for (let i = 0; i < b.length; i++) bin += String.fromCharCode(b[i]);
-    return btoa(bin);
-  } catch(e) { return btoa(unescape(encodeURIComponent(s))); }
-}
-async function decompressToken(b64) {
-  const c = b64.replace(/[\s\n\r\t\u00a0\u3000\uff0c]/g, '');
-  try {
-    const raw = atob(c); const bytes = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
-    return await new Response(stream).text();
-  } catch(e) {
-    try { return decodeURIComponent(escape(atob(c))); }
-    catch(e2) { throw new Error('Token decode failed (length: ' + c.length + '). May be truncated.'); }
-  }
-}
+async function compressToken(s){try{const st=new Blob([s]).stream().pipeThrough(new CompressionStream('deflate'));const buf=await new Response(st).arrayBuffer();const b=new Uint8Array(buf);let bin='';for(let i=0;i<b.length;i++)bin+=String.fromCharCode(b[i]);return btoa(bin)}catch(e){return btoa(unescape(encodeURIComponent(s)))}}
+async function decompressToken(b64){const c=b64.replace(/[\s\n\r\t\u00a0\u3000\uff0c]/g,'');try{const raw=atob(c);const bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);const st=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));return await new Response(st).text()}catch(e){try{return decodeURIComponent(escape(atob(c)))}catch(e2){throw new Error('Token decode failed.')}}}
 
 // ===== WebRTC =====
-let pc = null, dc = null, myColor = 0;
-const ICE = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun.cloudflare.com:3478' }
-];
-function createPC() { pc = new RTCPeerConnection({ iceServers: ICE }); return pc; }
-function waitICE(p, ms = 8000) {
-  return new Promise(r => {
-    if (p.iceGatheringState === 'complete') { r(); return; }
-    const t = setTimeout(() => r(), ms);
-    p.addEventListener('icecandidate', e => {
-      if (e.candidate && e.candidate.candidate.includes('srflx')) { clearTimeout(t); setTimeout(r, 500); }
-    });
-    p.addEventListener('icegatheringstatechange', () => { if (p.iceGatheringState === 'complete') { clearTimeout(t); r(); } });
-  });
-}
+let pc=null,dc=null,myColor=0;
+const ICE=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun2.l.google.com:19302'},{urls:'stun:stun.cloudflare.com:3478'}];
+function createPC(){pc=new RTCPeerConnection({iceServers:ICE});return pc}
+function waitICE(p,ms=8000){return new Promise(r=>{if(p.iceGatheringState==='complete'){r();return}const t=setTimeout(()=>r(),ms);p.addEventListener('icecandidate',e=>{if(e.candidate&&e.candidate.candidate.includes('srflx')){clearTimeout(t);setTimeout(r,500)}});p.addEventListener('icegatheringstatechange',()=>{if(p.iceGatheringState==='complete'){clearTimeout(t);r()}})})}
 
-async function generateOffer() {
-  myColor = 1; showLobbyStep('create-2'); setLobbyStatus('');
-  document.getElementById('offerOutput').value = 'Generating...';
-  createPC(); dc = pc.createDataChannel('audit', { ordered: true }); setupDC(dc);
-  const offer = await pc.createOffer(); await pc.setLocalDescription(offer); await waitICE(pc);
-  const token = await compressToken(JSON.stringify(pc.localDescription));
-  document.getElementById('offerOutput').value = token;
-  document.getElementById('offer-len').textContent = token.length + ' chars';
-}
+async function generateOffer(){myColor=1;showLobbyStep('create-2');setLobbyStatus('');document.getElementById('offerOutput').value='Generating...';createPC();dc=pc.createDataChannel('audit',{ordered:true});setupDC(dc);const o=await pc.createOffer();await pc.setLocalDescription(o);await waitICE(pc);const t=await compressToken(JSON.stringify(pc.localDescription));document.getElementById('offerOutput').value=t;document.getElementById('offer-len').textContent=t.length+' chars'}
+async function acceptOffer(){myColor=2;setLobbyStatus('');const raw=document.getElementById('offerInput').value;if(!raw.trim()){setLobbyStatus('Paste the invite code');return}showLobbyStep('join-2');document.getElementById('answerOutput').value='Generating...';try{const o=JSON.parse(await decompressToken(raw));createPC();pc.ondatachannel=e=>{dc=e.channel;setupDC(dc)};await pc.setRemoteDescription(o);const a=await pc.createAnswer();await pc.setLocalDescription(a);await waitICE(pc);const t=await compressToken(JSON.stringify(pc.localDescription));document.getElementById('answerOutput').value=t;document.getElementById('answer-out-len').textContent=t.length+' chars';setLobbyStatus('Waiting...');startJoinerMonitor()}catch(e){setLobbyStatus('Error: '+e.message);showLobbyStep('join-1')}}
+let joinerMonitor=null;
+function startJoinerMonitor(){if(joinerMonitor)clearInterval(joinerMonitor);let ticks=0;joinerMonitor=setInterval(()=>{ticks++;if(!pc){clearInterval(joinerMonitor);joinerMonitor=null;return}if(dc&&dc.readyState==='open'){clearInterval(joinerMonitor);joinerMonitor=null;return}const st=pc.connectionState||pc.iceConnectionState;if(st==='connected'||st==='completed'){if(ticks>6){clearInterval(joinerMonitor);joinerMonitor=null;setLobbyStatus('Connected! Tap below if game did not start.');const el=document.getElementById('lobby-status');if(!el.querySelector('.btn')){const b=document.createElement('button');b.className='btn btn-primary';b.textContent='Enter Game';b.style.marginTop='6px';b.onclick=()=>{document.getElementById('lobby-overlay').classList.remove('show');startGame()};el.appendChild(b)}}}else if(st==='failed'||st==='disconnected'){clearInterval(joinerMonitor);joinerMonitor=null;setLobbyStatus('Failed. Try New Session.')}},1000)}
 
-async function acceptOffer() {
-  myColor = 2; setLobbyStatus('');
-  const raw = document.getElementById('offerInput').value;
-  if (!raw.trim()) { setLobbyStatus('Please paste the invite code'); return; }
-  showLobbyStep('join-2'); document.getElementById('answerOutput').value = 'Generating...';
-  try {
-    const offer = JSON.parse(await decompressToken(raw));
-    createPC(); pc.ondatachannel = e => { dc = e.channel; setupDC(dc); };
-    await pc.setRemoteDescription(offer);
-    const ans = await pc.createAnswer(); await pc.setLocalDescription(ans); await waitICE(pc);
-    const token = await compressToken(JSON.stringify(pc.localDescription));
-    document.getElementById('answerOutput').value = token;
-    document.getElementById('answer-out-len').textContent = token.length + ' chars';
-    setLobbyStatus('Waiting for friend to connect...');
-    startJoinerMonitor();
-  } catch(e) { setLobbyStatus('Error: ' + e.message); showLobbyStep('join-1'); }
-}
-let joinerMonitor = null;
-function startJoinerMonitor() {
-  if (joinerMonitor) clearInterval(joinerMonitor);
-  let ticks = 0;
-  joinerMonitor = setInterval(() => {
-    ticks++;
-    if (!pc) { clearInterval(joinerMonitor); joinerMonitor = null; return; }
-    if (dc && dc.readyState === 'open') { clearInterval(joinerMonitor); joinerMonitor = null; return; }
-    const st = pc.connectionState || pc.iceConnectionState;
-    if (st === 'connected' || st === 'completed') {
-      if (ticks > 6) {
-        clearInterval(joinerMonitor); joinerMonitor = null;
-        setLobbyStatus('Connected! If game did not start, tap below.');
-        const statusEl = document.getElementById('lobby-status');
-        if (!statusEl.querySelector('.btn')) {
-          const btn = document.createElement('button'); btn.className = 'btn btn-primary'; btn.textContent = 'Enter Game'; btn.style.marginTop = '8px';
-          btn.onclick = () => { document.getElementById('lobby-overlay').classList.remove('show'); startGame(); };
-          statusEl.appendChild(btn);
-        }
-      }
-    } else if (st === 'failed' || st === 'disconnected') { clearInterval(joinerMonitor); joinerMonitor = null; setLobbyStatus('Connection failed. Try New Session.'); }
-  }, 1000);
-}
+async function acceptAnswer(){if(dc&&dc.readyState==='open'){document.getElementById('lobby-overlay').classList.remove('show');return}if(!pc||pc.signalingState==='stable'){setLobbyStatus('Already connected!');setTimeout(()=>{document.getElementById('lobby-overlay').classList.remove('show');startGame()},600);return}setLobbyStatus('');const raw=document.getElementById('answerInput').value;if(!raw.trim()){setLobbyStatus('Paste the response code');return}try{const a=JSON.parse(await decompressToken(raw));await pc.setRemoteDescription(a);setLobbyStatus('Connecting...');startConnectionMonitor()}catch(e){setLobbyStatus('Error: '+e.message)}}
+let connMonitor=null;
+function startConnectionMonitor(){if(connMonitor)clearInterval(connMonitor);let ticks=0;connMonitor=setInterval(()=>{ticks++;if(!pc){clearInterval(connMonitor);connMonitor=null;return}const st=pc.connectionState||pc.iceConnectionState;if(st==='connected'||st==='completed'){if(dc&&dc.readyState==='open'){clearInterval(connMonitor);connMonitor=null;return}if(ticks>10){clearInterval(connMonitor);connMonitor=null;setLobbyStatus('Connected! Tap below.');const el=document.getElementById('lobby-status');if(!el.querySelector('.btn')){const b=document.createElement('button');b.className='btn btn-primary';b.textContent='Enter Game';b.style.marginTop='6px';b.onclick=()=>{document.getElementById('lobby-overlay').classList.remove('show');startGame()};el.appendChild(b)}}}else if(st==='failed'||st==='disconnected'){clearInterval(connMonitor);connMonitor=null;setLobbyStatus('Failed. Try New Session.')}},500)}
 
-async function acceptAnswer() {
-  if (dc && dc.readyState === 'open') { document.getElementById('lobby-overlay').classList.remove('show'); return; }
-  if (!pc || pc.signalingState === 'stable') {
-    setLobbyStatus('Already connected!'); setTimeout(() => { document.getElementById('lobby-overlay').classList.remove('show'); startGame(); }, 600); return;
-  }
-  setLobbyStatus('');
-  const raw = document.getElementById('answerInput').value;
-  if (!raw.trim()) { setLobbyStatus('Please paste the response code'); return; }
-  try {
-    const ans = JSON.parse(await decompressToken(raw));
-    await pc.setRemoteDescription(ans); setLobbyStatus('Connecting...');
-    startConnectionMonitor();
-  } catch(e) { setLobbyStatus('Error: ' + e.message); }
-}
-let connMonitor = null;
-function startConnectionMonitor() {
-  if (connMonitor) clearInterval(connMonitor);
-  let ticks = 0;
-  connMonitor = setInterval(() => {
-    ticks++;
-    if (!pc) { clearInterval(connMonitor); connMonitor = null; return; }
-    const st = pc.connectionState || pc.iceConnectionState;
-    if (st === 'connected' || st === 'completed') {
-      if (dc && dc.readyState === 'open') { clearInterval(connMonitor); connMonitor = null; return; }
-      if (ticks > 10) {
-        clearInterval(connMonitor); connMonitor = null;
-        setLobbyStatus('Connected! If game did not start, tap below.');
-        const statusEl = document.getElementById('lobby-status');
-        if (!statusEl.querySelector('.btn')) {
-          const btn = document.createElement('button'); btn.className = 'btn btn-primary'; btn.textContent = 'Enter Game'; btn.style.marginTop = '8px';
-          btn.onclick = () => { document.getElementById('lobby-overlay').classList.remove('show'); startGame(); };
-          statusEl.appendChild(btn);
-        }
-      }
-    } else if (st === 'failed' || st === 'disconnected') { clearInterval(connMonitor); connMonitor = null; setLobbyStatus('Connection failed. Try New Session.'); }
-  }, 500);
-}
-
-function setupDC(ch) {
-  ch.onopen = () => { stopPolling(); setLobbyStatus(''); document.getElementById('lobby-overlay').classList.remove('show'); startGame(); };
-  ch.onclose = () => { document.querySelector('.statusbar span').innerHTML = '<span class="status-dot" style="background:#f85149"></span>Disconnected'; };
-  ch.onmessage = e => {
-    const d = JSON.parse(e.data);
-    if (d.type === 'move' && !grid[d.r][d.c] && !gameOver) placePiece(d.r, d.c);
-    else if (d.type === 'undo') { undoRemote(); }
-    else if (d.type === 'restart') { gameCount = d.gn || gameCount; initGame(); document.getElementById('result-overlay').classList.remove('show'); }
-    else if (d.type === 'reaction') { showFloatingEmoji(d.emoji); }
-  };
-}
-function sendMsg(o) { if (dc && dc.readyState === 'open') dc.send(JSON.stringify(o)); }
+function setupDC(ch){ch.onopen=()=>{stopPolling();setLobbyStatus('');document.getElementById('lobby-overlay').classList.remove('show');startGame()};ch.onclose=()=>{document.querySelector('.statusbar span').innerHTML='<span class="status-dot" style="background:var(--red)"></span>Disconnected'};ch.onmessage=e=>{const d=JSON.parse(e.data);if(d.type==='move'&&!grid[d.r][d.c]&&!gameOver)placePiece(d.r,d.c);else if(d.type==='undo'){undoRemote()}else if(d.type==='restart'){gameCount=d.gn||gameCount;initGame();document.getElementById('result-overlay').classList.remove('show')}else if(d.type==='reaction'){showFloatingEmoji(d.emoji)}}}
+function sendMsg(o){if(dc&&dc.readyState==='open')dc.send(JSON.stringify(o))}
 
 // ===== Lobby UI =====
-function showLobby() {
-  if (connMonitor) { clearInterval(connMonitor); connMonitor = null; }
-  if (joinerMonitor) { clearInterval(joinerMonitor); joinerMonitor = null; }
-  stopPolling();
-  if (dc) { try { dc.close(); } catch(e) {} } if (pc) { try { pc.close(); } catch(e) {} }
-  dc = null; pc = null;
-  clearUndoTimer();
-  gameCount = 0; scoreA = 0; scoreB = 0;
-  const statusEl = document.getElementById('lobby-status');
-  statusEl.querySelectorAll('.btn').forEach(b => b.remove());
-  document.getElementById('result-overlay').classList.remove('show');
-  document.getElementById('lobby-overlay').classList.add('show');
-  switchLobbyTab('quick');
-  document.querySelectorAll('#lobby-overlay textarea').forEach(t => t.value = '');
-  document.querySelectorAll('.token-info').forEach(e => e.textContent = '');
-  const ri = document.getElementById('room-code-input'); if (ri) ri.value = '';
-  setLobbyStatus(''); setQuickStatus(''); setQuickJoinStatus('');
-}
-function switchLobbyTab(t) {
-  document.getElementById('ltab-quick').classList.toggle('active', t === 'quick');
-  document.getElementById('ltab-create').classList.toggle('active', t === 'create');
-  document.getElementById('ltab-join').classList.toggle('active', t === 'join');
-  if (t === 'quick') showLobbyStep('quick-create');
-  else if (t === 'create') showLobbyStep('create-1');
-  else showLobbyStep('join-1');
-  setLobbyStatus('');
-}
-function showLobbyStep(id) {
-  document.querySelectorAll('.lobby-step').forEach(e => e.classList.remove('active'));
-  const el = document.getElementById('lstep-' + id);
-  if (el) el.classList.add('active');
-}
-function setLobbyStatus(m) { document.getElementById('lobby-status').textContent = m; }
-function copyText(id) {
-  const el = document.getElementById(id); el.select();
-  if (navigator.clipboard) { navigator.clipboard.writeText(el.value); }
-  else { document.execCommand('copy'); }
-  const t = document.getElementById('toast'); t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 1000);
-}
+function showLobby(){if(connMonitor){clearInterval(connMonitor);connMonitor=null}if(joinerMonitor){clearInterval(joinerMonitor);joinerMonitor=null}stopPolling();if(dc){try{dc.close()}catch(e){}}if(pc){try{pc.close()}catch(e){}}dc=null;pc=null;clearUndoTimer();gameCount=0;scoreA=0;scoreB=0;const el=document.getElementById('lobby-status');el.querySelectorAll('.btn').forEach(b=>b.remove());document.getElementById('result-overlay').classList.remove('show');document.getElementById('lobby-overlay').classList.add('show');switchLobbyTab('quick');document.querySelectorAll('#lobby-overlay textarea').forEach(t=>t.value='');document.querySelectorAll('.token-info').forEach(e=>e.textContent='');const ri=document.getElementById('room-code-input');if(ri)ri.value='';setLobbyStatus('');setQuickStatus('');setQuickJoinStatus('')}
+function switchLobbyTab(t){document.getElementById('ltab-quick').classList.toggle('active',t==='quick');document.getElementById('ltab-create').classList.toggle('active',t==='create');document.getElementById('ltab-join').classList.toggle('active',t==='join');if(t==='quick')showLobbyStep('quick-create');else if(t==='create')showLobbyStep('create-1');else showLobbyStep('join-1');setLobbyStatus('')}
+function showLobbyStep(id){document.querySelectorAll('.lobby-step').forEach(e=>e.classList.remove('active'));const el=document.getElementById('lstep-'+id);if(el)el.classList.add('active')}
+function setLobbyStatus(m){document.getElementById('lobby-status').textContent=m}
+function copyText(id){const el=document.getElementById(id);el.select();if(navigator.clipboard)navigator.clipboard.writeText(el.value);else document.execCommand('copy');const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1000)}
 
 // ===== Clock =====
-function updateClock() {
-  const d = new Date();
-  document.getElementById('clock').textContent = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
-}
-setInterval(updateClock, 1000); updateClock();
+function updateClock(){const d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')}
+setInterval(updateClock,1000);updateClock();
 
 // ===== Game =====
-const SIZE = 15;
-let CELL, PAD, R, W;
-const COL_HEADERS = 'ABCDEFGHIJKLMNO'.split('');
-const rowLabels = Array.from({ length: 15 }, (_, i) => 'V' + String(i + 1).padStart(2, '0'));
-let grid, history, currentPlayer, gameOver;
-let scoreA = 0, scoreB = 0, gameCount = 0;
-const canvas = document.getElementById('board');
-const ctx = canvas.getContext('2d');
+const SIZE=15;let CELL,PAD,R,W;
+const COL_HEADERS='ABCDEFGHIJKLMNO'.split('');
+const rowLabels=Array.from({length:15},(_,i)=>'V'+String(i+1).padStart(2,'0'));
+let grid,history,currentPlayer,gameOver;
+let scoreA=0,scoreB=0,gameCount=0;
+const canvas=document.getElementById('board');
+const ctx=canvas.getContext('2d');
 
-function calcSize() {
-  const maxW = Math.min(window.innerWidth - 24, 600);
-  CELL = Math.floor(maxW / (SIZE + 1));
-  PAD = Math.floor(CELL * 0.8);
-  R = Math.floor(CELL * 0.38);
-  W = PAD * 2 + CELL * (SIZE - 1);
-  canvas.width = canvas.height = W;
-  canvas.style.width = W + 'px';
-  canvas.style.height = W + 'px';
-}
-calcSize();
-window.addEventListener('resize', () => { calcSize(); if (grid) draw(); });
+function calcSize(){const maxW=Math.min(window.innerWidth-24,600);CELL=Math.floor(maxW/(SIZE+1));PAD=Math.floor(CELL*0.8);R=Math.floor(CELL*0.38);W=PAD*2+CELL*(SIZE-1);canvas.width=canvas.height=W;canvas.style.width=W+'px';canvas.style.height=W+'px'}
+calcSize();window.addEventListener('resize',()=>{calcSize();if(grid)draw()});
 
-function initGame() {
-  grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
-  history = []; currentPlayer = (gameCount % 2 === 0) ? 1 : 2; gameOver = false;
-  clearUndoTimer();
-  updateUI(); draw();
-  const firstPlayer = currentPlayer === 1 ? 'A' : 'B';
-  document.getElementById('log-list').innerHTML =
-    '<div class="log-item"><span class="log-time">' + timeNow() + '</span><span>Game ' + (gameCount + 1) + ' · Rev.' + firstPlayer + ' goes first</span></div>';
-}
-function startGame() {
-  const mode = myColor === 1 ? 'Reviewer A' : 'Reviewer B';
-  const elD = document.getElementById('stat-mode'); if (elD) elD.textContent = mode;
-  const elM = document.getElementById('stat-mode-m'); if (elM) elM.textContent = mode;
-  initGame();
-}
-function timeNow() { const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0'); }
-function addLog(msg) {
-  const list = document.getElementById('log-list');
-  const item = document.createElement('div'); item.className = 'log-item';
-  item.innerHTML = '<span class="log-time">' + timeNow() + '</span><span>' + msg + '</span>';
-  list.prepend(item); if (list.children.length > 30) list.removeChild(list.lastChild);
-}
-function updateUI() {
-  const t = history.length;
-  const b = grid.flat().filter(v => v === 1).length, w = grid.flat().filter(v => v === 2).length;
-  const el = id => document.getElementById(id);
-  if (el('stat-total')) el('stat-total').textContent = t + ' / 225';
-  if (el('stat-black')) el('stat-black').textContent = b;
-  if (el('stat-white')) el('stat-white').textContent = w;
-  if (el('stat-pending')) el('stat-pending').textContent = 225 - t;
-  if (el('stat-turn')) el('stat-turn').textContent = t + 1;
-  if (el('progress-fill')) el('progress-fill').style.width = (t / 225 * 100) + '%';
-  if (el('stat-total-m')) el('stat-total-m').textContent = t + '/225';
-  if (el('stat-black-m')) el('stat-black-m').textContent = b;
-  if (el('stat-white-m')) el('stat-white-m').textContent = w;
-  if (el('stat-turn-m')) el('stat-turn-m').textContent = t + 1;
-  if (el('score-a')) el('score-a').textContent = scoreA;
-  if (el('score-b')) el('score-b').textContent = scoreB;
+function initGame(){grid=Array.from({length:SIZE},()=>Array(SIZE).fill(0));history=[];currentPlayer=(gameCount%2===0)?1:2;gameOver=false;clearUndoTimer();updateUI();draw();const fp=currentPlayer===1?'A':'B';document.getElementById('log-list').innerHTML='<div class="log-item"><span class="log-time">'+timeNow()+'</span><span>Game '+(gameCount+1)+' · Rev.'+fp+' first</span></div>'}
+function startGame(){const mode=myColor===1?'Reviewer A':'Reviewer B';const elD=document.getElementById('stat-mode');if(elD)elD.textContent=mode;const elM=document.getElementById('stat-mode-m');if(elM)elM.textContent=mode;initGame()}
+function timeNow(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')}
+function addLog(msg){const list=document.getElementById('log-list');const item=document.createElement('div');item.className='log-item';item.innerHTML='<span class="log-time">'+timeNow()+'</span><span>'+msg+'</span>';list.prepend(item);if(list.children.length>30)list.removeChild(list.lastChild)}
 
-  const isMy = currentPlayer === myColor;
-  ['turn-status', 'turn-status-m'].forEach(id => {
-    const e = el(id); if (!e) return;
-    if (gameOver) { e.textContent = '● Done'; e.className = 'stat-value orange'; }
-    else { e.textContent = isMy ? '● Your turn' : '● Wait'; e.className = 'stat-value ' + (isMy ? 'green' : 'red'); }
-  });
-  const badge = el('status-badge');
-  if (badge) {
-    if (gameOver) { badge.textContent = 'Done'; badge.className = 'badge badge-err'; }
-    else if (isMy) { badge.textContent = 'Action'; badge.className = 'badge badge-warn'; }
-    else { badge.textContent = 'Running'; badge.className = 'badge badge-ok'; }
-  }
-}
+function updateUI(){const t=history.length;const b=grid.flat().filter(v=>v===1).length,w=grid.flat().filter(v=>v===2).length;const el=id=>document.getElementById(id);if(el('stat-total'))el('stat-total').textContent=t+' / 225';if(el('stat-black'))el('stat-black').textContent=b;if(el('stat-white'))el('stat-white').textContent=w;if(el('stat-pending'))el('stat-pending').textContent=225-t;if(el('stat-turn'))el('stat-turn').textContent=t+1;if(el('progress-fill'))el('progress-fill').style.width=(t/225*100)+'%';if(el('stat-total-m'))el('stat-total-m').textContent=t+'/225';if(el('stat-black-m'))el('stat-black-m').textContent=b;if(el('stat-white-m'))el('stat-white-m').textContent=w;if(el('stat-turn-m'))el('stat-turn-m').textContent=t+1;if(el('score-a'))el('score-a').textContent=scoreA;if(el('score-b'))el('score-b').textContent=scoreB;const isMy=currentPlayer===myColor;['turn-status','turn-status-m'].forEach(id=>{const e=el(id);if(!e)return;if(gameOver){e.textContent='● Done';e.className='stat-value orange'}else{e.textContent=isMy?'● Your turn':'● Wait';e.className='stat-value '+(isMy?'green':'red')}});const badge=el('status-badge');if(badge){if(gameOver){badge.textContent='Done';badge.className='badge badge-err'}else if(isMy){badge.textContent='Action';badge.className='badge badge-warn'}else{badge.textContent='Running';badge.className='badge badge-ok'}}}
 
-function placePiece(r, c) {
-  grid[r][c] = currentPlayer; history.push([r, c]);
-  addLog('Rev.' + (currentPlayer === 1 ? 'A' : 'B') + ' → ' + COL_HEADERS[c] + rowLabels[r]);
-  draw(); updateUI();
-  if (checkWin(r, c, currentPlayer)) {
-    gameOver = true;
-    if (currentPlayer === 1) scoreA++; else scoreB++;
-    updateUI();
-    document.getElementById('result-title').textContent = currentPlayer === myColor ? 'You Win! 🎉' : 'You Lost 💀';
-    document.getElementById('result-sub').textContent = 'Rev.' + (currentPlayer === 1 ? 'A' : 'B') + ' wins · Score ' + scoreA + ':' + scoreB;
-    setTimeout(() => document.getElementById('result-overlay').classList.add('show'), 400);
-    return;
-  }
-  if (history.length === SIZE * SIZE) {
-    gameOver = true;
-    document.getElementById('result-title').textContent = 'Draw!';
-    document.getElementById('result-sub').textContent = '225 cells filled · Score ' + scoreA + ':' + scoreB;
-    setTimeout(() => document.getElementById('result-overlay').classList.add('show'), 400);
-    updateUI(); return;
-  }
-  currentPlayer = currentPlayer === 1 ? 2 : 1; updateUI();
-}
+function placePiece(r,c){grid[r][c]=currentPlayer;history.push([r,c]);addLog('Rev.'+(currentPlayer===1?'A':'B')+' → '+COL_HEADERS[c]+rowLabels[r]);draw();updateUI();if(checkWin(r,c,currentPlayer)){gameOver=true;if(currentPlayer===1)scoreA++;else scoreB++;updateUI();document.getElementById('result-title').textContent=currentPlayer===myColor?(lang==='zh'?'你赢了！🎉':'You Win! 🎉'):(lang==='zh'?'你输了 💀':'You Lost 💀');document.getElementById('result-sub').textContent='Rev.'+(currentPlayer===1?'A':'B')+(lang==='zh'?' 胜':' wins')+' · '+scoreA+':'+scoreB;setTimeout(()=>document.getElementById('result-overlay').classList.add('show'),400);return}if(history.length===SIZE*SIZE){gameOver=true;document.getElementById('result-title').textContent=lang==='zh'?'平局！':'Draw!';document.getElementById('result-sub').textContent='225 · '+scoreA+':'+scoreB;setTimeout(()=>document.getElementById('result-overlay').classList.add('show'),400);updateUI();return}currentPlayer=currentPlayer===1?2:1;updateUI()}
 
-function checkWin(r, c, p) {
-  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
-  for (const [dr, dc] of dirs) {
-    let n = 1;
-    for (let d = 1; d < 5; d++) { const nr = r+dr*d, nc = c+dc*d; if (nr<0||nr>=SIZE||nc<0||nc>=SIZE||grid[nr][nc]!==p) break; n++; }
-    for (let d = 1; d < 5; d++) { const nr = r-dr*d, nc = c-dc*d; if (nr<0||nr>=SIZE||nc<0||nc>=SIZE||grid[nr][nc]!==p) break; n++; }
-    if (n >= 5) return true;
-  }
-  return false;
-}
-function restart() { document.getElementById('result-overlay').classList.remove('show'); clearUndoTimer(); gameCount++; sendMsg({ type: 'restart', gn: gameCount }); initGame(); }
+function checkWin(r,c,p){const dirs=[[0,1],[1,0],[1,1],[1,-1]];for(const[dr,dc]of dirs){let n=1;for(let d=1;d<5;d++){const nr=r+dr*d,nc=c+dc*d;if(nr<0||nr>=SIZE||nc<0||nc>=SIZE||grid[nr][nc]!==p)break;n++}for(let d=1;d<5;d++){const nr=r-dr*d,nc=c-dc*d;if(nr<0||nr>=SIZE||nc<0||nc>=SIZE||grid[nr][nc]!==p)break;n++}if(n>=5)return true}return false}
+function restart(){document.getElementById('result-overlay').classList.remove('show');clearUndoTimer();gameCount++;sendMsg({type:'restart',gn:gameCount});initGame()}
 
 // ===== Drawing =====
-function draw() {
-  ctx.fillStyle = '#0d1117'; ctx.fillRect(0, 0, W, W);
-  ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
-  for (let i = 0; i < SIZE; i++) {
-    const p = PAD + i * CELL;
-    ctx.beginPath(); ctx.moveTo(PAD, p); ctx.lineTo(PAD + (SIZE-1)*CELL, p); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(p, PAD); ctx.lineTo(p, PAD + (SIZE-1)*CELL); ctx.stroke();
-  }
-  const fs = Math.max(8, Math.floor(CELL * 0.26));
-  ctx.fillStyle = '#484f58'; ctx.font = fs + 'px SF Mono, Menlo, monospace';
-  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  for (let r = 0; r < SIZE; r++) ctx.fillText(rowLabels[r], PAD - 4, PAD + r * CELL);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  for (let c = 0; c < SIZE; c++) ctx.fillText(COL_HEADERS[c], PAD + c * CELL, PAD - 4);
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
-    if (!grid[r][c]) continue;
-    const x = PAD + c * CELL, y = PAD + r * CELL;
-    if (grid[r][c] === 1) { ctx.fillStyle = 'rgba(248,81,73,0.12)'; ctx.fillRect(x-CELL/2+1, y-CELL/2+1, CELL-2, CELL-2); ctx.fillStyle = '#f85149'; }
-    else { ctx.fillStyle = 'rgba(79,110,247,0.12)'; ctx.fillRect(x-CELL/2+1, y-CELL/2+1, CELL-2, CELL-2); ctx.fillStyle = '#58a6ff'; }
-    ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
-  }
-  if (history.length > 0) {
-    const [lr, lc] = history[history.length - 1];
-    ctx.strokeStyle = grid[lr][lc] === 1 ? '#f85149' : '#58a6ff'; ctx.lineWidth = 1.5;
-    ctx.strokeRect(PAD+lc*CELL-CELL/2+2, PAD+lr*CELL-CELL/2+2, CELL-4, CELL-4);
-  }
+function getCSS(v){return getComputedStyle(document.body).getPropertyValue(v).trim()}
+function draw(){
+  ctx.fillStyle=getCSS('--board-bg');ctx.fillRect(0,0,W,W);
+  ctx.strokeStyle=getCSS('--board-line');ctx.lineWidth=1;
+  for(let i=0;i<SIZE;i++){const p=PAD+i*CELL;ctx.beginPath();ctx.moveTo(PAD,p);ctx.lineTo(PAD+(SIZE-1)*CELL,p);ctx.stroke();ctx.beginPath();ctx.moveTo(p,PAD);ctx.lineTo(p,PAD+(SIZE-1)*CELL);ctx.stroke()}
+  const fs=Math.max(8,Math.floor(CELL*0.24));ctx.fillStyle=getCSS('--board-label');ctx.font=fs+'px SF Mono,Menlo,monospace';
+  ctx.textAlign='right';ctx.textBaseline='middle';for(let r=0;r<SIZE;r++)ctx.fillText(rowLabels[r],PAD-4,PAD+r*CELL);
+  ctx.textAlign='center';ctx.textBaseline='bottom';for(let c=0;c<SIZE;c++)ctx.fillText(COL_HEADERS[c],PAD+c*CELL,PAD-4);
+  const p1bg=getCSS('--board-bg1'),p2bg=getCSS('--board-bg2'),p1=getCSS('--board-piece1'),p2=getCSS('--board-piece2');
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){if(!grid[r][c])continue;const x=PAD+c*CELL,y=PAD+r*CELL;if(grid[r][c]===1){ctx.fillStyle=p1bg;ctx.fillRect(x-CELL/2+1,y-CELL/2+1,CELL-2,CELL-2);ctx.fillStyle=p1}else{ctx.fillStyle=p2bg;ctx.fillRect(x-CELL/2+1,y-CELL/2+1,CELL-2,CELL-2);ctx.fillStyle=p2}ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill()}
+  if(history.length>0){const[lr,lc]=history[history.length-1];ctx.strokeStyle=getCSS('--board-highlight');ctx.lineWidth=1.5;ctx.strokeRect(PAD+lc*CELL-CELL/2+2,PAD+lr*CELL-CELL/2+2,CELL-4,CELL-4)}
 }
 
 // ===== Touch + Mouse =====
-function getGridPos(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = W / rect.width, scaleY = W / rect.height;
-  const mx = (clientX - rect.left) * scaleX, my = (clientY - rect.top) * scaleY;
-  const c = Math.round((mx - PAD) / CELL), r = Math.round((my - PAD) / CELL);
-  if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return null;
-  return { r, c };
-}
+function getGridPos(cx,cy){const rect=canvas.getBoundingClientRect();const sx=W/rect.width,sy=W/rect.height;const mx=(cx-rect.left)*sx,my=(cy-rect.top)*sy;const c=Math.round((mx-PAD)/CELL),r=Math.round((my-PAD)/CELL);if(r<0||r>=SIZE||c<0||c>=SIZE)return null;return{r,c}}
+canvas.addEventListener('touchstart',e=>{e.preventDefault();if(gameOver||currentPlayer!==myColor)return;const pos=getGridPos(e.touches[0].clientX,e.touches[0].clientY);if(!pos||grid[pos.r][pos.c])return;placePiece(pos.r,pos.c);sendMsg({type:'move',r:pos.r,c:pos.c});if(!gameOver)startUndoTimer(pos.r,pos.c)},{passive:false});
+canvas.addEventListener('click',e=>{if(gameOver||currentPlayer!==myColor)return;const pos=getGridPos(e.clientX,e.clientY);if(!pos||grid[pos.r][pos.c])return;placePiece(pos.r,pos.c);sendMsg({type:'move',r:pos.r,c:pos.c});if(!gameOver)startUndoTimer(pos.r,pos.c)});
+canvas.addEventListener('mousemove',e=>{if(gameOver||currentPlayer!==myColor)return;draw();const pos=getGridPos(e.clientX,e.clientY);if(!pos||grid[pos.r][pos.c])return;const x=PAD+pos.c*CELL,y=PAD+pos.r*CELL;ctx.fillStyle=myColor===1?getCSS('--board-bg1'):getCSS('--board-bg2');ctx.fillRect(x-CELL/2+1,y-CELL/2+1,CELL-2,CELL-2)});
+canvas.addEventListener('mouseleave',()=>{if(!gameOver)draw()});
 
-canvas.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  if (gameOver || currentPlayer !== myColor) return;
-  const touch = e.touches[0];
-  const pos = getGridPos(touch.clientX, touch.clientY);
-  if (!pos || grid[pos.r][pos.c]) return;
-  placePiece(pos.r, pos.c);
-  sendMsg({ type: 'move', r: pos.r, c: pos.c });
-  if (!gameOver) startUndoTimer(pos.r, pos.c);
-}, { passive: false });
+// ===== Undo =====
+let undoTimer=null,undoCountdown=0,undoTarget=null;
+function clearUndoTimer(){if(undoTimer){clearInterval(undoTimer);undoTimer=null}undoTarget=null;const btn=document.getElementById('undo-btn');btn.classList.remove('show');btn.style.display='none';btn.textContent='Undo'}
+function startUndoTimer(r,c){clearUndoTimer();undoTarget=[r,c];undoCountdown=5;const btn=document.getElementById('undo-btn');btn.style.display='';btn.classList.add('show');btn.textContent='Undo (5s)';undoTimer=setInterval(()=>{undoCountdown--;if(undoCountdown<=0)clearUndoTimer();else btn.textContent='Undo ('+undoCountdown+'s)'},1000)}
+function undoMove(){if(!undoTarget||gameOver)return;const[r,c]=undoTarget;grid[r][c]=0;history.pop();currentPlayer=myColor;addLog('Undo ← '+COL_HEADERS[c]+rowLabels[r]);draw();updateUI();sendMsg({type:'undo'});clearUndoTimer()}
+function undoRemote(){if(history.length===0)return;const[r,c]=history[history.length-1];grid[r][c]=0;history.pop();currentPlayer=myColor===1?2:1;addLog('Opponent undo ← '+COL_HEADERS[c]+rowLabels[r]);draw();updateUI()}
 
-canvas.addEventListener('click', (e) => {
-  if (gameOver || currentPlayer !== myColor) return;
-  const pos = getGridPos(e.clientX, e.clientY);
-  if (!pos || grid[pos.r][pos.c]) return;
-  placePiece(pos.r, pos.c);
-  sendMsg({ type: 'move', r: pos.r, c: pos.c });
-  if (!gameOver) startUndoTimer(pos.r, pos.c);
-});
+// ===== Reactions =====
+function sendReaction(emoji){showFloatingEmoji(emoji);sendMsg({type:'reaction',emoji})}
+function showFloatingEmoji(emoji){const el=document.createElement('div');el.className='float-emoji';el.textContent=emoji;el.style.left=(Math.random()*60+20)+'%';el.style.top=(Math.random()*30+50)+'%';document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
 
-canvas.addEventListener('mousemove', (e) => {
-  if (gameOver || currentPlayer !== myColor) return;
-  draw();
-  const pos = getGridPos(e.clientX, e.clientY);
-  if (!pos || grid[pos.r][pos.c]) return;
-  const x = PAD + pos.c * CELL, y = PAD + pos.r * CELL;
-  ctx.fillStyle = myColor === 1 ? 'rgba(248,81,73,0.08)' : 'rgba(88,166,255,0.06)';
-  ctx.fillRect(x - CELL/2+1, y - CELL/2+1, CELL-2, CELL-2);
-});
-canvas.addEventListener('mouseleave', () => { if (!gameOver) draw(); });
-
-// ===== Undo (5-second window) =====
-let undoTimer = null, undoCountdown = 0, undoTarget = null;
-function clearUndoTimer() {
-  if (undoTimer) { clearInterval(undoTimer); undoTimer = null; }
-  undoTarget = null;
-  const btn = document.getElementById('undo-btn');
-  btn.classList.remove('show', 'expired');
-  btn.style.display = 'none';
-  btn.textContent = 'Undo';
-}
-function startUndoTimer(r, c) {
-  clearUndoTimer();
-  undoTarget = [r, c];
-  undoCountdown = 5;
-  const btn = document.getElementById('undo-btn');
-  btn.style.display = '';
-  btn.classList.add('show');
-  btn.classList.remove('expired');
-  btn.textContent = 'Undo (5s)';
-  undoTimer = setInterval(() => {
-    undoCountdown--;
-    if (undoCountdown <= 0) { clearUndoTimer(); }
-    else { btn.textContent = 'Undo (' + undoCountdown + 's)'; }
-  }, 1000);
-}
-function undoMove() {
-  if (!undoTarget || gameOver) return;
-  const [r, c] = undoTarget;
-  grid[r][c] = 0; history.pop();
-  currentPlayer = myColor;
-  addLog('Undo ← ' + COL_HEADERS[c] + rowLabels[r]);
-  draw(); updateUI();
-  sendMsg({ type: 'undo' });
-  clearUndoTimer();
-}
-function undoRemote() {
-  if (history.length === 0) return;
-  const [r, c] = history[history.length - 1];
-  grid[r][c] = 0; history.pop();
-  currentPlayer = myColor === 1 ? 2 : 1;
-  addLog('Opponent undo ← ' + COL_HEADERS[c] + rowLabels[r]);
-  draw(); updateUI();
-}
-
-// ===== Emoji Reactions =====
-function sendReaction(emoji) {
-  showFloatingEmoji(emoji);
-  sendMsg({ type: 'reaction', emoji: emoji });
-}
-function showFloatingEmoji(emoji) {
-  const el = document.createElement('div');
-  el.className = 'float-emoji';
-  el.textContent = emoji;
-  el.style.left = (Math.random() * 60 + 20) + '%';
-  el.style.top = (Math.random() * 30 + 50) + '%';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2200);
-}
+// Init
+applyLang();
 </script>
 </body>
 </html>
