@@ -310,20 +310,18 @@ body.theme-notebook .nb-breadcrumb span.active-crumb{opacity:1;color:var(--text)
       <div class="lobby-tab" id="ltab-join" onclick="switchLobbyTab('join')" data-i18n="tab-join">Join Code</div>
     </div>
     <div class="lobby-step active" id="lstep-quick-create">
-      <label id="lb-quick-create-label">Create a room and share the code</label>
+      <label id="lb-quick-create-label">Create a room or enter a code to join</label>
       <button class="btn btn-primary" onclick="quickCreate()" id="btn-create-room">Create Room</button>
+      <div style="text-align:center;font-size:10px;color:var(--text3);padding:4px 0">— or —</div>
+      <input class="lobby-input" id="room-code-input" maxlength="6" placeholder="ROOM CODE" autocomplete="off" autocapitalize="characters">
+      <button class="btn btn-secondary" onclick="quickJoin()" id="btn-join-room">Join Room</button>
+      <div class="lobby-status" id="quick-join-status"></div>
     </div>
     <div class="lobby-step" id="lstep-quick-waiting">
       <label id="lb-share-code">Share this room code:</label>
       <div class="room-code-display" id="room-code-display">----</div>
       <button class="btn btn-secondary" onclick="copyRoomCode()">Copy Code</button>
       <div class="lobby-status" id="quick-status"><span class="spinner"></span>Waiting...</div>
-    </div>
-    <div class="lobby-step" id="lstep-quick-join">
-      <label id="lb-enter-code">Enter room code</label>
-      <input class="lobby-input" id="room-code-input" maxlength="6" placeholder="—" autocomplete="off" autocapitalize="characters">
-      <button class="btn btn-primary" onclick="quickJoin()" id="btn-join-room">Join Room</button>
-      <div class="lobby-status" id="quick-join-status"></div>
     </div>
     <div class="lobby-step" id="lstep-create-1">
       <label>Tap to generate an invite code</label>
@@ -376,7 +374,7 @@ const I18N = {
   'tab-join':     { en: 'Paste Invite',  zh: '邀请码(加入)' },
   'lobby-title':  { en: 'Session Setup',       zh: '联机设置' },
   'lobby-desc':   { en: 'Create or join a multiplayer session', zh: '创建或加入多人对局' },
-  'lb-quick-create-label': { en: 'Create a room and share the code', zh: '创建房间，把房间号发给朋友' },
+  'lb-quick-create-label': { en: 'Create a room or enter a code to join', zh: '创建房间或输入房间号加入' },
   'btn-create-room': { en: 'Create Room', zh: '创建房间' },
   'lb-share-code':   { en: 'Share this room code:', zh: '把房间号发给朋友：' },
   'lb-enter-code':   { en: 'Enter room code', zh: '输入房间号' },
